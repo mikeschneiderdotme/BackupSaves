@@ -1,0 +1,11 @@
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.exe
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.deps.json
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.runtimeconfig.json
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.runtimeconfig.dev.json
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.dll
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Release\netcoreapp3.0\BackupSaves.pdb
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Release\netcoreapp3.0\BackupSaves.csprojAssemblyReference.cache
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Release\netcoreapp3.0\BackupSaves.AssemblyInfoInputs.cache
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Release\netcoreapp3.0\BackupSaves.AssemblyInfo.cs
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Release\netcoreapp3.0\BackupSaves.dll
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Release\netcoreapp3.0\BackupSaves.pdb
