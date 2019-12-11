@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BackupSaves
 {
@@ -12,8 +13,15 @@ namespace BackupSaves
         /// </summary>
         private const string BASE_BACKUP_DIRECTORY = @"D:\SavesBackup\";
 
+        private const string LOG_PATH = BASE_BACKUP_DIRECTORY + "log.txt";
+
         /// <summary>
-        /// A dictionary that contains games and their corresponding saves path.
+        /// A write lock object to handle system I/O exceptions with the log file.
+        /// </summary>
+        private static ReaderWriterLockSlim _readWriteLock = new ReaderWriterLockSlim();
+
+        /// <summary>
+        /// A dictionary object that contains game names(key) and their corresponding saves path(value).
         /// </summary>
         private static readonly Dictionary<string, string> SaveLocations = new Dictionary<string, string>
         {
@@ -23,6 +31,9 @@ namespace BackupSaves
             { "AC3", @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\savegames\7e7ad2e9-f90b-494e-a1cc-c4ec784c9b3c\5184" }
         };
 
+        /// <summary>
+        /// A list object that contains the menu items for the console window.
+        /// </summary>
         private static readonly List<string> Commands = new List<string>
         {
             "1 - List Game Saves[NYI]",
@@ -42,10 +53,18 @@ namespace BackupSaves
         /// <param name="args">Passed in args from the console.</param>
         public static void Main(string[] args)
         {
+            // Program Initialization
             DestinationCheck(BASE_BACKUP_DIRECTORY, false);
 
+            if (!File.Exists(LOG_PATH))
+            {
+                File.Create(LOG_PATH);
+            }
+
+            Menu();
+
             // Input functionality
-            ConsoleKey input = Menu();
+            ConsoleKey input = Console.ReadKey().Key;
             while (input != ConsoleKey.D0)
             {
                 Console.Write("\n");
@@ -53,17 +72,17 @@ namespace BackupSaves
                 {
                     case ConsoleKey.D2:
                         Backup();
-                        input = Console.ReadKey().Key;
                         break;
                     case ConsoleKey.D9:
                         Console.Clear();
-                        input = Menu();
+                        Menu();
                         break;
                     default:
                         Console.WriteLine("Command not recognized, enter 6 for help, 9 to reset, or 0 to exit.");
-                        input = Console.ReadKey().Key;
                         break;
                 }
+
+                input = Console.ReadKey().Key;
             }
         }
 
@@ -98,27 +117,44 @@ namespace BackupSaves
                     string source = location.Value.ToString();
 
                     DirectoryCopy(source, BASE_BACKUP_DIRECTORY + game);
-                    Console.WriteLine(string.Format("{0} backup successful.", game));
+
+                    // Output results
+                    string result = string.Format("{0} backup successful.", game);
+                    Console.WriteLine(result);
+                    WriteToLog(result);
                 }
-                LogBackup(BASE_BACKUP_DIRECTORY + "log.txt");
+                Console.WriteLine("Backup Complete");
+                WriteToLog("Backup Completed");
             }
             catch (Exception e)
             {
                 Console.WriteLine(string.Format("\n{0}\n{1}", e.Message, e.StackTrace));
+                WriteToLog(e.Message);
             }
         }
-
-        private static void LogBackup(string logPath)
+        
+        /// <summary>
+        /// Writes a string to a log.txt file in the backup directory.
+        /// </summary>
+        /// <param name="log">Log message being written to the log.txt file.</param>
+        private static void WriteToLog(string log)
         {
-            if (!File.Exists(logPath))
-            {
-                File.Create(logPath);
-            }
+            // Set status to locked.
+            _readWriteLock.EnterWriteLock();
 
-            Thread.Sleep(2000);
-            using (StreamWriter file = new StreamWriter(logPath, true))
+            try
             {
-                file.WriteLine("Backup Completed: " + DateTime.Now.ToString());
+                // Append log to file.
+                using (var file = new StreamWriter(LOG_PATH, true))
+                {
+                    file.WriteLine(string.Format("[{0}]: {1}", DateTime.Now, log));
+                    file.Close();
+                }
+            }
+            finally
+            {
+                // Release lock.
+                _readWriteLock.ExitWriteLock();
             }
         }
 
@@ -126,15 +162,13 @@ namespace BackupSaves
         /// A method that displays a consol menu of actions for the backup file system.
         /// </summary>
         /// <returns>The console key that is inputed after the menu is redisplayed.</returns>
-        private static ConsoleKey Menu()
+        private static void Menu()
         {
             string header = string.Format("{0}\n{1}\n", 
                                           "Saved Games Backup Console", 
                                           "--------------------------");
             Console.WriteLine(header);
             Commands.ForEach(command => Console.WriteLine(command));
-
-            return Console.ReadKey().Key;
         }
 
         /// <summary>
@@ -145,17 +179,36 @@ namespace BackupSaves
         /// <param name="copySubDirs">A bool indicating if subdirectories will be copied. (Default true)</param>
         private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs = true)
         {
-            // Get the subdirectories for the specified directory.
-            DirectoryInfo dir = SourceCheck(sourceDirName);
+            try
+            {
+                // Get the subdirectories for the specified directory.
+                DirectoryInfo dir = SourceCheck(sourceDirName);
 
-            DirectoryInfo[] dirs = dir.GetDirectories();
-            DestinationCheck(destDirName);
+                // Get directories in the source.
+                DirectoryInfo[] dirs = dir.GetDirectories();
 
-            // Get the files in the directory and copy them to the new location.
-            CopyFiles(destDirName, dir);
+                // Check to see the destination directory exists.
+                DestinationCheck(destDirName);
 
-            // If copying subdirectories, copy them and their contents to new location.
-            CopySubdirectories(destDirName, copySubDirs, dirs);
+                // Get the files in the directory and copy them to the new location.
+                CopyFiles(destDirName, dir);
+
+                // If copying subdirectories, copy them and their contents to new location.
+                if (copySubDirs)
+                {
+                    foreach (DirectoryInfo subdir in dirs)
+                    {
+                        string temppath = Path.Combine(destDirName, subdir.Name);
+                        DirectoryCopy(subdir.FullName, temppath, copySubDirs);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(string.Format("\n{0}\n{1}", e.Message, e.StackTrace));
+                WriteToLog(e.Message);
+            }
+
         }
 
         private static DirectoryInfo SourceCheck(string sourceDirName)
@@ -170,18 +223,6 @@ namespace BackupSaves
             }
 
             return dir;
-        }
-
-        private static void CopySubdirectories(string destDirName, bool copySubDirs, DirectoryInfo[] dirs)
-        {
-            if (copySubDirs)
-            {
-                foreach (DirectoryInfo subdir in dirs)
-                {
-                    string temppath = Path.Combine(destDirName, subdir.Name);
-                    DirectoryCopy(subdir.FullName, temppath, copySubDirs);
-                }
-            }
         }
 
         private static void CopyFiles(string destDirName, DirectoryInfo dir)
