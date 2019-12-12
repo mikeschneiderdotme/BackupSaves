@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace BackupSaves
 {
@@ -13,7 +12,14 @@ namespace BackupSaves
         /// </summary>
         private const string BASE_BACKUP_DIRECTORY = @"D:\SavesBackup\";
 
+        /// <summary>
+        /// Constant that contains the log file path.
+        /// </summary>
         private const string LOG_PATH = BASE_BACKUP_DIRECTORY + "log.txt";
+
+        private const string STEAM_LOCATION = @"C:\Program Files (x86)\Steam\userdata\62462215\";
+
+        private const string UPLAY_LOCATION = @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\savegames\7e7ad2e9-f90b-494e-a1cc-c4ec784c9b3c\";
 
         /// <summary>
         /// A write lock object to handle system I/O exceptions with the log file.
@@ -23,13 +29,17 @@ namespace BackupSaves
         /// <summary>
         /// A dictionary object that contains game names(key) and their corresponding saves path(value).
         /// </summary>
-        private static readonly Dictionary<string, string> SaveLocations = new Dictionary<string, string>
+        private static readonly Dictionary<int, string> UplaySaves = new Dictionary<int, string>
         {
-            { "Grim Dawn", @"C:\Program Files (x86)\Steam\userdata\62462215\219990\remote\save" },
-            { "Monster Hunter World", @"C:\Program Files (x86)\Steam\userdata\62462215\582010\remote" },
-            { "AC Odyssey", @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\savegames\7e7ad2e9-f90b-494e-a1cc-c4ec784c9b3c\5092" },
-            { "AC3", @"C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\savegames\7e7ad2e9-f90b-494e-a1cc-c4ec784c9b3c\5184" }
+            { 5092, "Assassin's Creed Odyssey" },
+            { 5184, "Assassin's Creed 3" }
         };
+
+        private static readonly Dictionary<int, string> SteamSaves = APIUtil.GetSteamApps().Result;
+
+        private static int fileError = 0;
+
+        private static int backupError = 0;
 
         /// <summary>
         /// A list object that contains the menu items for the console window.
@@ -46,7 +56,6 @@ namespace BackupSaves
             "0 - Exit"
         };
 
-
         /// <summary>
         /// Executes the console program.
         /// </summary>
@@ -56,9 +65,14 @@ namespace BackupSaves
             // Program Initialization
             DestinationCheck(BASE_BACKUP_DIRECTORY, false);
 
-            if (!File.Exists(LOG_PATH))
+            using(FileStream stream = new FileStream(LOG_PATH, FileMode.Create))
             {
-                File.Create(LOG_PATH);
+                if (!File.Exists(LOG_PATH))
+                {
+                    stream.WriteByte(new byte());
+                    stream.Flush();
+                }
+                stream.Close();
             }
 
             Menu();
@@ -73,6 +87,9 @@ namespace BackupSaves
                     case ConsoleKey.D2:
                         Backup();
                         break;
+                    case ConsoleKey.D6:
+                        Help();
+                        break;
                     case ConsoleKey.D9:
                         Console.Clear();
                         Menu();
@@ -84,6 +101,13 @@ namespace BackupSaves
 
                 input = Console.ReadKey().Key;
             }
+        }
+
+        private static void Help()
+        {
+            Console.WriteLine("This console utilizes a simple single key interface.");
+            Console.WriteLine("To perform an action, press the corresponding key from the menu");
+            // Add readkey here to provide help for individual commands.
         }
 
         /// <summary>
@@ -111,28 +135,51 @@ namespace BackupSaves
         {
             try
             {
-                foreach (KeyValuePair<string, string> location in SaveLocations)
+                string result = null;
+                // Backup Steam Games
+                foreach (KeyValuePair<int, string> save in SteamSaves)
                 {
-                    string game = location.Key.ToString();
-                    string source = location.Value.ToString();
+                    string id = save.Key.ToString();
+                    string name = save.Value.ToString();
 
-                    DirectoryCopy(source, BASE_BACKUP_DIRECTORY + game);
+                    DirectoryCopy(STEAM_LOCATION + id + @"\", BASE_BACKUP_DIRECTORY + name);
 
-                    // Output results
-                    string result = string.Format("{0} backup successful.", game);
-                    Console.WriteLine(result);
-                    WriteToLog(result);
+                    // Add game to results log
+                    result += name + "; ";
                 }
-                Console.WriteLine("Backup Complete");
-                WriteToLog("Backup Completed");
+
+                // Backup Uplay Games
+                foreach (KeyValuePair<int, string> save in UplaySaves)
+                {
+                    string id = save.Key.ToString();
+                    string name = save.Value.ToString();
+
+                    DirectoryCopy(UPLAY_LOCATION + id, BASE_BACKUP_DIRECTORY + name);
+
+                    // Add game to results log
+                    result += name + "; ";
+                }
+
+                // Log backup
+                BackupSummary();
+                WriteToLog("Backup Completed. Saves backed up: " + result.TrimEnd("; ".ToCharArray()));
             }
             catch (Exception e)
             {
-                Console.WriteLine(string.Format("\n{0}\n{1}", e.Message, e.StackTrace));
-                WriteToLog(e.Message);
+                backupError++;
+                WriteToLog(string.Format("{0}\n{1}", e.Message, e.StackTrace.Substring(0, e.StackTrace.IndexOf(" in C:"))));
             }
         }
-        
+
+        private static void BackupSummary()
+        {
+            Console.WriteLine($"There were {backupError} errors in the backup process.");
+            Console.WriteLine($"There were {fileError} errors in the file copy process.");
+            Console.WriteLine("Backup Complete. See the log file for details.");
+            backupError = 0;
+            fileError = 0;
+        }
+
         /// <summary>
         /// Writes a string to a log.txt file in the backup directory.
         /// </summary>
@@ -205,10 +252,9 @@ namespace BackupSaves
             }
             catch (Exception e)
             {
-                Console.WriteLine(string.Format("\n{0}\n{1}", e.Message, e.StackTrace));
-                WriteToLog(e.Message);
+                fileError++;
+                WriteToLog(string.Format("{0}\n{1}", e.Message, e.StackTrace.Substring(0, e.StackTrace.IndexOf(" in C:"))));
             }
-
         }
 
         private static DirectoryInfo SourceCheck(string sourceDirName)
