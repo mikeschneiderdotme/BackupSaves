@@ -140,9 +140,9 @@ namespace BackupSaves
                 foreach (KeyValuePair<int, string> save in SteamSaves)
                 {
                     string id = save.Key.ToString();
-                    string name = save.Value.ToString();
+                    string name = string.Join("_", save.Value.ToString().Split(Path.GetInvalidFileNameChars()));
 
-                    DirectoryCopy(STEAM_LOCATION + id + @"\", BASE_BACKUP_DIRECTORY + name);
+                    DirectoryCopy(STEAM_LOCATION + id, BASE_BACKUP_DIRECTORY + name);
 
                     // Add game to results log
                     result += name + "; ";
@@ -152,7 +152,7 @@ namespace BackupSaves
                 foreach (KeyValuePair<int, string> save in UplaySaves)
                 {
                     string id = save.Key.ToString();
-                    string name = save.Value.ToString();
+                    string name = string.Join("_", save.Value.ToString().Split(Path.GetInvalidFileNameChars()));
 
                     DirectoryCopy(UPLAY_LOCATION + id, BASE_BACKUP_DIRECTORY + name);
 
@@ -174,7 +174,7 @@ namespace BackupSaves
         private static void BackupSummary()
         {
             Console.WriteLine($"There were {backupError} errors in the backup process.");
-            Console.WriteLine($"There were {fileError} errors in the file copy process.");
+            Console.WriteLine($"There were {fileError} games not backed up in the file copy process.");
             Console.WriteLine("Backup Complete. See the log file for details.");
             backupError = 0;
             fileError = 0;
