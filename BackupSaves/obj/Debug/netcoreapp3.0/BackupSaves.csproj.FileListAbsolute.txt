@@ -9,3 +9,5 @@ C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Debug\netcoreapp3.0
 C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Debug\netcoreapp3.0\BackupSaves.AssemblyInfo.cs
 C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Debug\netcoreapp3.0\BackupSaves.dll
 C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Debug\netcoreapp3.0\BackupSaves.pdb
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\bin\Debug\netcoreapp3.0\Newtonsoft.Json.dll
+C:\Users\mschn\Desktop\workspace\BackupSaves\BackupSaves\obj\Debug\netcoreapp3.0\BackupSaves.csproj.CopyComplete

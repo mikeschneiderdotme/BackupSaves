@@ -242,7 +242,6 @@ paket-files/
 
 # JetBrains Rider
 .idea/
-
 *.sln.iml
 */.vs
 *.cache
