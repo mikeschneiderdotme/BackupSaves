@@ -2,23 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using BackupSaves.Utilities;
+using static BackupSaves.Utilities.LogUtil;
 
 namespace BackupSaves
 {
     public class Program
     {
-        private static int fileError = 0;
-
-        private static int backupError = 0;
-
         /// <summary>
         /// A list object that contains the menu items for the console window.
         /// </summary>
         private static readonly List<string> Commands = new List<string>
         {
-            "1 - List Games[NYI]",
             "2 - Backup All Game Saves",
-            "5 - Backup Specific Game Saves[NYI]",
             "6 - Help",
             "9 - Reset",
             "0 - Exit"
@@ -72,13 +68,13 @@ namespace BackupSaves
         }
 
         /// <summary>
-        /// 
+        /// Provides decriptive help for the menu functions of this program.
         /// </summary>
         private static void Help()
         {
             Console.WriteLine("This console utilizes a simple single key interface.");
             Console.WriteLine("To perform an action, press the corresponding key from the menu");
-            // Add readkey here to provide help for individual commands.
+            // [NYI] Add readkey here to provide help for individual commands.
         }
 
         /// <summary>
@@ -95,6 +91,8 @@ namespace BackupSaves
             {
                 Console.WriteLine("Backup Complete with no errors.");
             }
+
+            WriteToLog("Backup Completed.");
         }
 
         /// <summary>
