@@ -14,11 +14,10 @@ namespace BackupSaves
             // Program Initialization
             FileUtil.DestinationCheck(FileUtil.BASE_BACKUP_DIRECTORY, false);
             FileUtil.InitiateLogFile();
-            ConsoleUtil.Menu();
+            ConsoleUtil.InitializeConsole();
 
             // Input functionality
             while (ConsoleUtil.GetInput() != ConsoleKey.Escape) { }
-
         }
     }
 }
